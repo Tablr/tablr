@@ -49,134 +49,87 @@ const getAllTabIds = windows => {
 /**********************************************************************/
 // We need super wrapper that does the initial gather of our data
 // that everything will use
-new Promise((resolve, reject) => {
-  // Sets window filter options
-  const windowOptions = {
-    populate: true,
-    windowTypes: [ 'normal' ]
-  };
 
-  chrome.windows.getAll(windowOptions, windows => {
-    resolve(getAllTabIds(windows));
-  });
-}).then(superO => {
-  // super --> { baseDomain: [Tab] }
-
-  /* HELPERS */
-  // Restructure our data to have tags
-  // TODO: This data will need to persist in local storage or the cloud
-  const getTaggedDomains = () => {
-    // The tags we should tag our root domains with
-    // TODO: Our tagData should ultimately be located in local storage or cloud storage
-    const tagData = {
-      developer : [ 'stackoverflow', 'github', 'stackexchange', 'promisesaplus', 'chaijs' ],
-      social: [ 'facebook' ],
-      news: [ 'nbc', 'yahoo' ]
+chrome.runtime.onMessage.addListener(() => {
+  new Promise((resolve, reject) => {
+    // Sets window filter options
+    const windowOptions = {
+      populate: true,
+      windowTypes: [ 'normal' ]
     };
 
-    const taggedDomains = {};
+    chrome.windows.getAll(windowOptions, windows => {
+      resolve(getAllTabIds(windows));
+    });
+  }).then(superO => {
+    // super --> { baseDomain: [Tab] }
 
-    // Simply goes through each url and tag it
-    for (let base in superO) {
-      superO[base].forEach(tab => {
-        for (let tag in tagData) {
-          if (tagData[tag].includes(tab.url)) {
-            taggedDomains[tab.url] = tag;
-            break;
+    /* HELPERS */
+    // Restructure our data to have tags
+    // TODO: This data will need to persist in local storage or the cloud
+    const getTaggedDomains = () => {
+      // The tags we should tag our root domains with
+      // TODO: Our tagData should ultimately be located in local storage or cloud storage
+      const tagData = {
+        developer : [ 'stackoverflow', 'github', 'stackexchange', 'promisesaplus', 'chaijs' ],
+        social: [ 'facebook' ],
+        news: [ 'nbc', 'yahoo' ]
+      };
+
+      const taggedDomains = {};
+
+      // Simply goes through each url and tag it
+      for (let base in superO) {
+        superO[base].forEach(tab => {
+          for (let tag in tagData) {
+            if (tagData[tag].includes(tab.url)) {
+              taggedDomains[tab.url] = tag;
+              break;
+            }
+            else taggedDomains[tab.url] = 'untagged';
           }
-          else taggedDomains[tab.url] = 'untagged';
-        }
-      });
-    }
+        });
+      }
 
-    return taggedDomains;
-  };
-
-  // Use the index to handle what preview render function to run
-  let selectedOption;
-
-  /* FEATURES */
-  // Default functionality - sort tabs by base domain
-  const sortTabsByBaseDomain = () => {
-    for (let base in superO) {
-      // We need to get the first tab to set as the first tab in the new window
-      const firstTab = superO[base].pop();
-
-      // We should check for when there are no single domains
-      if (!firstTab) continue;
-
-      chrome.windows.create({ tabId: firstTab.id }, window => {
-        // Set up the array of tabs to move to the new window
-        const arrOfTabs = superO[base].map(tab => tab.id);
-        chrome.tabs.move(arrOfTabs, { windowId : window.id, index : -1 });
-      });
-    }
-  };
-
-  // Sort Tabs by Tag Name
-  // TODO:
-  const sortTabsByTagName = () => {
-    const taggedDomains = getTaggedDomains();
-  };
-
-  // On button click, it should sort our tabs
-  // TODO: refactor so callback is dynamic
-  const organizeTabsBtnEl = document.getElementById('organize-tab-btn');
-  organizeTabsBtnEl.addEventListener('click', () => {
-    switch (selectedOption) {
-      case 1:
-        sortTabsByTagName();
-        break;
-      default:
-        sortTabsByBaseDomain();
-    }
-  });
-
-  // Listens to option changes
-  // Each option change should render a preview
-  const organizeTypeDropdownEl = document.getElementById('organize-type-dropdown');
-  organizeTypeDropdownEl.addEventListener('change', () => {
-    const contentEl = document.getElementById('content');
+      return taggedDomains;
+    };
 
     // Use the index to handle what preview render function to run
-    selectedOption = organizeTypeDropdownEl.selectedIndex;
+    let selectedOption;
 
-    switch (selectedOption) {
-      case 0:
-        contentEl.innerHTML = '';
-        break;
-      case 1:
-        const taggedDomains = getTaggedDomains();
+    /* FEATURES */
+    // Default functionality - sort tabs by base domain
+    let sequence = Promise.resolve();
+    const sortTabsByBaseDomain = () => {
+      for (let base in superO) {
+        // We need to get the first tab to set as the first tab in the new window
+        const firstTab = superO[base].pop();
 
-        // Append a list of tagged items
-        const taggedDomainListEl = document.createElement('ul');
-        taggedDomainListEl.id = 'preview-list';
-        taggedDomainListEl.className = 'list-group';
+        // We should check for when there are no single domains
+        if (!firstTab) continue;
 
-        for (let domain in taggedDomains) {
-          // Skip unknown domains
-          if (domain === 'undefined') continue;
+        new Promise(resolve => {
+          sequence = sequence.then(() => {
+            chrome.windows.create({ tabId: firstTab.id }, window => {
+              // Set up the array of tabs to move to the new window
+              const arrOfTabs = superO[base].map(tab => tab.id);
+              arrOfTabs.forEach(tabId => chrome.tabs.move(tabId, { windowId : window.id, index : -1  }));
+              resolve();
+            });
+          });
+        });
+      };
+    };
+    // Sort Tabs by Tag Name
+    // TODO:
+    const sortTabsByTagName = () => {
+      const taggedDomains = getTaggedDomains();
+    };
 
-          const taggedDomainListItemEl = document.createElement('li');
-          taggedDomainListItemEl.className = 'list-group-item';
-
-          const taggedDomainListItemSpanEl = document.createElement('span');
-          taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
-          taggedDomainListItemSpanElText = document.createTextNode(taggedDomains[domain]);
-          taggedDomainListItemSpanEl.appendChild(taggedDomainListItemSpanElText);
-          taggedDomainListItemEl.appendChild(taggedDomainListItemSpanEl);
-
-          const textNode = document.createTextNode(domain);
-          taggedDomainListItemEl.appendChild(textNode);
-          taggedDomainListEl.appendChild(taggedDomainListItemEl);
-        }
-
-        contentEl.appendChild(taggedDomainListEl);
-        break;
-      }
+    sortTabsByBaseDomain();
   });
-});
 
-function sortTabsByTags(windows){
-  let urls = getAllTabIds(windows);
-}
+  function sortTabsByTags(windows){
+    let urls = getAllTabIds(windows);
+  }
+});

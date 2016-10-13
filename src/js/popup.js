@@ -1,3 +1,7 @@
+const helpers = require('./shared/helpers.js');
+
+console.log(helpers);
+
 const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
 
 // Listens to option changes

@@ -1,7 +1,11 @@
-chrome.browserAction.onClicked.addListener(()=>{
+const organizeTabsBtnEl = document.getElementById('organize-tab-btn');
+organizeTabsBtnEl.addEventListener('click', organizeTabs);
+
+function organizeTabs() {
   let windowOptions = {populate: true, windowTypes: ['normal']};
   chrome.windows.getAll(windowOptions, sortTabsToWindows);
-});
+}
+
 function sortTabsByTags(windows){
   let urls = getAllTabIds(windows);
 }

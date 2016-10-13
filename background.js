@@ -1,129 +1,134 @@
-
-let windowOptions = {populate: true, windowTypes: ['normal']};
-
-const organizeTabsBtnEl = document.getElementById('organize-tab-btn');
-organizeTabsBtnEl.addEventListener('click', organizeTabs);
-
-const organizeTypeDropdownEl = document.getElementById('organize-type-dropdown');
-organizeTypeDropdownEl.addEventListener('change', () => {
-  const selectedOption = organizeTypeDropdownEl.selectedIndex;
-  let tagData = {
-    developer : [ "stackoverflow", "github", "stackexchange", "promisesaplus"]
+/*** Classes ***/
+class Tab {
+  constructor(id, url) {
+    this.id = id;
+    this.url = url;
   }
-  chrome.windows.getAll(windowOptions, (windows)=>{
-    let data = getAllTabIds(windows);
-    let taggedDomains = {};
-    console.log(data);
-    for( let domain in data ){
-      console.log(domain);
-      if(domain === "singles"){ //=============
-        data[domain].forEach(function(domain){
-          console.log(`singles domain: ${domain.tabUrl}`);
-          let tagFound = false;
-          for( let tag in tagData ){
-            if(tagData[tag].includes(domain.tabUrl)){
-              console.log(`found tag for domain.`);
-              tagFound = !tagFound;
-              taggedDomains[domain.tabUrl] = tag;
-              break;
-            }
-          }
-          if(!tagFound) taggedDomains[domain.tabUrl] = "untagged", console.log(`saving untagged domain`);
-        });
-      } //======================================
-      console.log(`checking domain ${domain}`);
-      let tagFound = false;
-      for( let tag in tagData ){//==========
-        console.log(data[domain]);
-        if(tagData[tag].includes(data[domain][0].tabUrl)){
-          console.log(`found tag for domain.`);
-          tagFound = !tagFound;
-          taggedDomains[data[domain][0].tabUrl] = tag;
-          break;
-        }
-      }//===================================
-      if(!tagFound) taggedDomains[data[domain][0].tabUrl] = "untagged", console.log(`saving untagged domain`);
-    }
-    console.log(taggedDomains);
-
-    let contentEl = document.getElementById("content");
-    let taggedDomainListEl = document.createElement("ul");
-    for(let domain in taggedDomains){
-      let taggedDomainListItemEl = document.createElement("li");
-      let textNode = document.createTextNode(`${domain}: ${taggedDomains[domain]}`);
-      taggedDomainListItemEl.appendChild(textNode);
-      taggedDomainListEl.appendChild(taggedDomainListItemEl);
-    }
-    contentEl.appendChild(taggedDomainListEl);
-  });
-
-});
-
-// chrome.browserAction.onClicked.addListener(()=>{
-//   organizeTabs();
-// });
-
-
-
-function organizeTabs() {
-  chrome.windows.getAll(windowOptions, (windows)=>{
-    let data = getAllTabIds(windows);
-    sortTabsToWindows(data);
-  });
 }
 
-function sortTabsByTags(windows){
-  let urls = getAllTabIds(windows);
-}
-
-function sortTabsToWindows(urls){
-  //let urls = getAllTabIds(windows);
-  for(let url in urls){
-    if(url === "singles" && urls[url].length === 0){
-      continue;
-    }
-    let firstTab = urls[url].shift();
-    console.log("creating new window with key: " + url);
-    console.log(urls[url]);
-    chrome.windows.create({tabId:firstTab.tabId}, (window) => {
-      let arr = urls[url].map(obj => obj.tabId);
-      chrome.tabs.move(arr, {windowId : window.id, index : -1});
-    });
-  }
-  console.log(urls);
-}
-
-/* helper functions */
-function getAllTabIds(windows){
-  let urls = {singles:[]};
-  console.log("getAllTabIds");
-  console.log(windows);
-  console.log(windows.length);
-  windows.forEach(function(window){
-    window.tabs.forEach(function(tab){
-      if(tab.url === "chrome://extensions/"){
-        return;
-      }
-      if(!urls[getBaseDomain(tab.url)]){
-        urls[getBaseDomain(tab.url)] = [];
-      }
-      console.log({tabId: tab.id, tabUrl: getBaseDomain(tab.url)});
-      urls[getBaseDomain(tab.url)].push({tabId: tab.id, tabUrl: getBaseDomain(tab.url)})
-    });
-  });
-  for( let url in urls ){
-    if(urls[url].length <= 1 && url !== "singles"){
-      urls["singles"] = urls["singles"].concat(urls[url]);
-      delete urls[url];
-    }
-  }
-  return urls;
-}
-function getBaseDomain(url){
+/* HELPER FUNCTIONS */
+// Get base domain
+const getBaseDomain = url => {
   // thanks to anubhava on Stack Overflow: http://stackoverflow.com/questions/25703360/regular-expression-extract-subdomain-domain
   let domainRegex = /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im;
   let baseDomain = domainRegex.exec(url)[1];
   let baseDomainArr = baseDomain.split('.');
 
   return baseDomainArr[baseDomainArr.length - 2];
+};
+
+// Gather all urls and separate by domain
+const getAllTabIds = windows => {
+  const urls = { singles: [] };
+
+  // Structuring our urls with base urls and all their associated tabs
+  windows.forEach(window => {
+    window.tabs.forEach(tab => {
+      // Get the base domain for the url
+      // Ex. 'http://meta.stackoverflow.com/test' --> 'stackoverflow'
+      const baseDomain = getBaseDomain(tab.url);
+
+      // Update our urls with base domains and all associated Tabs
+      if (!urls[baseDomain]) urls[baseDomain] = [];
+      urls[baseDomain].push(new Tab(tab.id, baseDomain));
+    });
+  });
+
+  // After updating our urls, we will have a bunch of single base domains
+  // By design, we will push all of these to a single key
+  for (let base in urls ) {
+    if (urls[base].length <= 1 && base !== 'singles') {
+      urls.singles.push(urls[base][0]);
+      delete urls[base];
+    }
+  }
+
+  return urls;
+};
+
+/**********************************************************************/
+// We need super wrapper that does the initial gather of our data
+// that everything will use
+new Promise((resolve, reject) => {
+  // Sets window filter options
+  const windowOptions = {
+    populate: true,
+    windowTypes: [ 'normal' ]
+  };
+
+  chrome.windows.getAll(windowOptions, windows => {
+    resolve(getAllTabIds(windows));
+  });
+}).then(superO => {
+  // super --> { baseDomain: [Tab] }
+
+  /* FEATURES */
+  // Default functionality - sort tabs by base domain
+  const sortTabsByBaseDomain = () => {
+    for (let base in superO) {
+      // We need to get the first tab to set as the first tab in the new window
+      const firstTab = superO[base].pop();
+
+      // We should check for when there are no single domains
+      if (!firstTab) continue;
+
+      chrome.windows.create({ tabId: firstTab.id }, window => {
+        // Set up the array of tabs to move to the new window
+        const arrOfTabs = superO[base].map(tab => tab.id);
+        chrome.tabs.move(arrOfTabs, { windowId : window.id, index : -1 });
+      });
+    }
+  };
+
+  // On button click, it should sort our tabs
+  // TODO: refactor so callback is dynamic
+  const organizeTabsBtnEl = document.getElementById('organize-tab-btn');
+  organizeTabsBtnEl.addEventListener('click', sortTabsByBaseDomain);
+
+  // Listens to option changes
+  // Each option change should render a preview
+  const organizeTypeDropdownEl = document.getElementById('organize-type-dropdown');
+  organizeTypeDropdownEl.addEventListener('change', () => {
+    // Use the index to handle what preview render function to run
+    const selectedOption = organizeTypeDropdownEl.selectedIndex;
+
+    // The tags we should tag our root domains with
+    // TODO: Our tagData should ultimately be located in local storage or cloud storage
+    const tagData = {
+      developer : [ 'stackoverflow', 'github', 'stackexchange', 'promisesaplus', 'chaijs' ],
+      social: [ 'facebook' ],
+      news: [ 'nbc', 'yahoo' ]
+    };
+
+    // Restructure our data to have tags
+    // TODO: This data will need to persist in local storage or the cloud
+    const taggedDomains = {};
+
+    // Simply goes through each url and tag it
+    for (let base in superO) {
+      superO[base].forEach(tab => {
+        for (let tag in tagData) {
+          if (tagData[tag].includes(tab.url)) {
+            taggedDomains[tab.url] = tag;
+            break;
+          }
+          else taggedDomains[tab.url] = 'untagged';
+        }
+      });
+    }
+
+    const contentEl = document.getElementById("content");
+    const taggedDomainListEl = document.createElement("ul");
+    for (let domain in taggedDomains){
+      const taggedDomainListItemEl = document.createElement("li");
+      const textNode = document.createTextNode(`${domain}: ${taggedDomains[domain]}`);
+      taggedDomainListItemEl.appendChild(textNode);
+      taggedDomainListEl.appendChild(taggedDomainListItemEl);
+    }
+    contentEl.appendChild(taggedDomainListEl);
+  });
+});
+
+function sortTabsByTags(windows){
+  let urls = getAllTabIds(windows);
 }

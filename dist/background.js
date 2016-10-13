@@ -1,51 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/*** Classes ***/
-class Tab {
-  constructor(id, url) {
-    this.id = id;
-    this.url = url;
-  }
-}
-
-/* HELPER FUNCTIONS */
-// Get base domain
-const getBaseDomain = url => {
-  // thanks to anubhava on Stack Overflow: http://stackoverflow.com/questions/25703360/regular-expression-extract-subdomain-domain
-  let domainRegex = /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im;
-  let baseDomain = domainRegex.exec(url)[1];
-  let baseDomainArr = baseDomain.split('.');
-
-  return baseDomainArr[baseDomainArr.length - 2];
-};
-
-// Gather all urls and separate by domain
-const getAllTabIds = windows => {
-  const urls = { singles: [] };
-
-  // Structuring our urls with base urls and all their associated tabs
-  windows.forEach(window => {
-    window.tabs.forEach(tab => {
-      // Get the base domain for the url
-      // Ex. 'http://meta.stackoverflow.com/test' --> 'stackoverflow'
-      const baseDomain = getBaseDomain(tab.url);
-
-      // Update our urls with base domains and all associated Tabs
-      if (!urls[baseDomain]) urls[baseDomain] = [];
-      urls[baseDomain].push(new Tab(tab.id, baseDomain));
-    });
-  });
-
-  // After updating our urls, we will have a bunch of single base domains
-  // By design, we will push all of these to a single key
-  for (let base in urls) {
-    if (urls[base].length <= 1 && base !== 'singles') {
-      urls.singles.push(urls[base][0]);
-      delete urls[base];
-    }
-  }
-
-  return urls;
-};
+const helpers = require('./shared/helpers.js');
 
 /**********************************************************************/
 // We need super wrapper that does the initial gather of our data
@@ -60,7 +14,7 @@ chrome.runtime.onMessage.addListener(() => {
     };
 
     chrome.windows.getAll(windowOptions, windows => {
-      resolve(getAllTabIds(windows));
+      resolve(helpers.getAllTabIds(windows));
     });
   }).then(superO => {
     // super --> { baseDomain: [Tab] }
@@ -130,8 +84,61 @@ chrome.runtime.onMessage.addListener(() => {
   });
 
   function sortTabsByTags(windows) {
-    let urls = getAllTabIds(windows);
+    let urls = helpers.getAllTabIds(windows);
   }
 });
+
+},{"./shared/helpers.js":2}],2:[function(require,module,exports){
+/*** Classes ***/
+class Tab {
+  constructor(id, url) {
+    this.id = id;
+    this.url = url;
+  }
+}
+
+// Get base domain
+const getBaseDomain = url => {
+  // thanks to anubhava on Stack Overflow: http://stackoverflow.com/questions/25703360/regular-expression-extract-subdomain-domain
+  let domainRegex = /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im;
+  let baseDomain = domainRegex.exec(url)[1];
+  let baseDomainArr = baseDomain.split('.');
+
+  return baseDomainArr[baseDomainArr.length - 2];
+};
+
+// Gather all urls and separate by domain
+const getAllTabIds = windows => {
+  const urls = { singles: [] };
+
+  // Structuring our urls with base urls and all their associated tabs
+  windows.forEach(window => {
+    window.tabs.forEach(tab => {
+      // Get the base domain for the url
+      // Ex. 'http://meta.stackoverflow.com/test' --> 'stackoverflow'
+      const baseDomain = getBaseDomain(tab.url);
+
+      // Update our urls with base domains and all associated Tabs
+      if (!urls[baseDomain]) urls[baseDomain] = [];
+      urls[baseDomain].push(new Tab(tab.id, baseDomain));
+    });
+  });
+
+  // After updating our urls, we will have a bunch of single base domains
+  // By design, we will push all of these to a single key
+  for (let base in urls) {
+    if (urls[base].length <= 1 && base !== 'singles') {
+      urls.singles.push(urls[base][0]);
+      delete urls[base];
+    }
+  }
+
+  return urls;
+};
+
+module.exports = {
+  getBaseDomain,
+  getAllTabIds
+};
 
 },{}]},{},[1]);

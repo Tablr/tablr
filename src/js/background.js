@@ -1,14 +1,5 @@
 const helpers = require('./shared/helpers.js');
 
-
-/*** Classes ***/
-class Tab {
-  constructor(id, url) {
-    this.id = id;
-    this.url = url;
-  }
-}
-
 /**********************************************************************/
 // We need super wrapper that does the initial gather of our data
 // that everything will use
@@ -22,7 +13,7 @@ chrome.runtime.onMessage.addListener(() => {
     };
 
     chrome.windows.getAll(windowOptions, windows => {
-      resolve(getAllTabIds(windows));
+      resolve(helpers.getAllTabIds(windows));
     });
   }).then(superO => {
     // super --> { baseDomain: [Tab] }
@@ -93,11 +84,6 @@ chrome.runtime.onMessage.addListener(() => {
   });
 
   function sortTabsByTags(windows){
-    let urls = getAllTabIds(windows);
+    let urls = helpers.getAllTabIds(windows);
   }
 });
-
-
-
-// exported to helper.js
-//============================

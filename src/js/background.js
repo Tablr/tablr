@@ -53,7 +53,6 @@ chrome.runtime.onMessage.addListener(() => {
 
     /* FEATURES */
     // Default functionality - sort tabs by base domain
-    let sequence = Promise.resolve();
     const sortTabsByBaseDomain = () => {
       for (let base in superO) {
         // We need to get the first tab to set as the first tab in the new window
@@ -62,15 +61,10 @@ chrome.runtime.onMessage.addListener(() => {
         // We should check for when there are no single domains
         if (!firstTab) continue;
 
-        new Promise(resolve => {
-          sequence = sequence.then(() => {
-            chrome.windows.create({ tabId: firstTab.id }, window => {
-              // Set up the array of tabs to move to the new window
-              const arrOfTabs = superO[base].map(tab => tab.id);
-              arrOfTabs.forEach(tabId => chrome.tabs.move(tabId, { windowId : window.id, index : -1  }));
-              resolve();
-            });
-          });
+        chrome.windows.create({ tabId: firstTab.id }, window => {
+          // Set up the array of tabs to move to the new window
+          const arrOfTabs = superO[base].map(tab => tab.id);
+          chrome.tabs.move(arrOfTabs, { windowId : window.id, index : -1  });
         });
       };
     };

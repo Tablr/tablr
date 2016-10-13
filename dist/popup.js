@@ -21,12 +21,10 @@ organizeTypeDropdownEl.addEventListener('change', () => {
       resolve(helpers.getAllTabIds(windows));
     });
   }).then(superO => {
-    console.log("on change called");
     const contentEl = document.getElementById('content');
 
     // Use the index to handle what preview render function to run
     selectedOption = organizeTypeDropdownEl.selectedIndex;
-    console.log(selectedOption);
     switch (selectedOption) {
       case 0:
         contentEl.innerHTML = '';
@@ -39,9 +37,7 @@ organizeTypeDropdownEl.addEventListener('change', () => {
         taggedDomainListEl.id = 'preview-list';
         taggedDomainListEl.className = 'list-group';
 
-        console.log(taggedDomains);
         for (let domain in taggedDomains) {
-          console.log(domain);
           // Skip unknown domains
           if (domain === 'undefined') continue;
 
@@ -58,7 +54,7 @@ organizeTypeDropdownEl.addEventListener('change', () => {
           taggedDomainListItemEl.appendChild(textNode);
           taggedDomainListEl.appendChild(taggedDomainListItemEl);
         }
-        console.log(taggedDomainListEl);
+
         contentEl.appendChild(taggedDomainListEl);
         break;
     }
@@ -72,7 +68,7 @@ const organizeTabsBtnEl = document.getElementById('organize-tab-btn');
 organizeTabsBtnEl.addEventListener('click', () => {
   switch (selectedOption) {
     case 1:
-      sortTabsByTagName();
+      chrome.runtime.sendMessage(EXTENSION_ID, 'sortByTagName');
       break;
     default:
       chrome.runtime.sendMessage(EXTENSION_ID, 'sortByBaseDomain');

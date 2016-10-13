@@ -67,7 +67,7 @@ const organizeTabsBtnEl = document.getElementById('organize-tab-btn');
 organizeTabsBtnEl.addEventListener('click', () => {
   switch (selectedOption) {
     case 1:
-      sortTabsByTagName();
+      chrome.runtime.sendMessage(EXTENSION_ID, 'sortByTagName');
       break;
     default:
       chrome.runtime.sendMessage(EXTENSION_ID, 'sortByBaseDomain');

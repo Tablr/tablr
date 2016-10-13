@@ -1,3 +1,5 @@
+const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
+
 // Listens to option changes
 // Each option change should render a preview
 const organizeTypeDropdownEl = document.getElementById('organize-type-dropdown');
@@ -55,6 +57,6 @@ organizeTabsBtnEl.addEventListener('click', () => {
       break;
     default:
       // sortTabsByBaseDomain();
-      chrome.runtime.sendMessage('fhfabliepoedlaafchpcjcblnkliioec', 'sortByBaseDomain');
+      chrome.runtime.sendMessage(EXTENSION_ID, 'sortByBaseDomain');
   }
 });

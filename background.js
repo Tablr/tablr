@@ -61,6 +61,8 @@ new Promise((resolve, reject) => {
   });
 }).then(superO => {
   // super --> { baseDomain: [Tab] }
+  // Use the index to handle what preview render function to run
+  let selectedOption;
 
   /* FEATURES */
   // Default functionality - sort tabs by base domain
@@ -83,49 +85,84 @@ new Promise((resolve, reject) => {
   // On button click, it should sort our tabs
   // TODO: refactor so callback is dynamic
   const organizeTabsBtnEl = document.getElementById('organize-tab-btn');
-  organizeTabsBtnEl.addEventListener('click', sortTabsByBaseDomain);
+  organizeTabsBtnEl.addEventListener('click', () => {
+    switch (selectedOption) {
+      case 1:
+        break;
+      default:
+        sortTabsByBaseDomain();
+    }
+  });
 
   // Listens to option changes
   // Each option change should render a preview
   const organizeTypeDropdownEl = document.getElementById('organize-type-dropdown');
   organizeTypeDropdownEl.addEventListener('change', () => {
+    const contentEl = document.getElementById('content');
+
+    // We need to reset our content div
+    // const oldEl = document.getElementById('preview-list');
+    // if (oldEl) contentEl.removeChild(oldEl);
+
     // Use the index to handle what preview render function to run
-    const selectedOption = organizeTypeDropdownEl.selectedIndex;
+    selectedOption = organizeTypeDropdownEl.selectedIndex;
 
-    // The tags we should tag our root domains with
-    // TODO: Our tagData should ultimately be located in local storage or cloud storage
-    const tagData = {
-      developer : [ 'stackoverflow', 'github', 'stackexchange', 'promisesaplus', 'chaijs' ],
-      social: [ 'facebook' ],
-      news: [ 'nbc', 'yahoo' ]
-    };
+    switch (selectedOption) {
+      case 0:
+        contentEl.innerHTML = '';
+        break;
+      case 1:
+        // The tags we should tag our root domains with
+        // TODO: Our tagData should ultimately be located in local storage or cloud storage
+        const tagData = {
+          developer : [ 'stackoverflow', 'github', 'stackexchange', 'promisesaplus', 'chaijs' ],
+          social: [ 'facebook' ],
+          news: [ 'nbc', 'yahoo' ]
+        };
 
-    // Restructure our data to have tags
-    // TODO: This data will need to persist in local storage or the cloud
-    const taggedDomains = {};
+        // Restructure our data to have tags
+        // TODO: This data will need to persist in local storage or the cloud
+        const taggedDomains = {};
 
-    // Simply goes through each url and tag it
-    for (let base in superO) {
-      superO[base].forEach(tab => {
-        for (let tag in tagData) {
-          if (tagData[tag].includes(tab.url)) {
-            taggedDomains[tab.url] = tag;
-            break;
-          }
-          else taggedDomains[tab.url] = 'untagged';
+        // Simply goes through each url and tag it
+        for (let base in superO) {
+          superO[base].forEach(tab => {
+            for (let tag in tagData) {
+              if (tagData[tag].includes(tab.url)) {
+                taggedDomains[tab.url] = tag;
+                break;
+              }
+              else taggedDomains[tab.url] = 'untagged';
+            }
+          });
         }
-      });
-    }
 
-    const contentEl = document.getElementById("content");
-    const taggedDomainListEl = document.createElement("ul");
-    for (let domain in taggedDomains){
-      const taggedDomainListItemEl = document.createElement("li");
-      const textNode = document.createTextNode(`${domain}: ${taggedDomains[domain]}`);
-      taggedDomainListItemEl.appendChild(textNode);
-      taggedDomainListEl.appendChild(taggedDomainListItemEl);
-    }
-    contentEl.appendChild(taggedDomainListEl);
+        // Append a list of tagged items
+        const taggedDomainListEl = document.createElement('ul');
+        taggedDomainListEl.id = 'preview-list';
+        taggedDomainListEl.className = 'list-group';
+
+        for (let domain in taggedDomains) {
+          // Skip unknown domains
+          if (domain === 'undefined') continue;
+
+          const taggedDomainListItemEl = document.createElement('li');
+          taggedDomainListItemEl.className = 'list-group-item';
+
+          const taggedDomainListItemSpanEl = document.createElement('span');
+          taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
+          taggedDomainListItemSpanElText = document.createTextNode(taggedDomains[domain]);
+          taggedDomainListItemSpanEl.appendChild(taggedDomainListItemSpanElText);
+          taggedDomainListItemEl.appendChild(taggedDomainListItemSpanEl);
+
+          const textNode = document.createTextNode(domain);
+          taggedDomainListItemEl.appendChild(textNode);
+          taggedDomainListEl.appendChild(taggedDomainListItemEl);
+        }
+
+        contentEl.appendChild(taggedDomainListEl);
+        break;
+      }
   });
 });
 

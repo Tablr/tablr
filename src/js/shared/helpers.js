@@ -45,8 +45,38 @@ const getAllTabIds = windows => {
   return urls;
 };
 
+// Restructure our data to have tags
+// TODO: This data will need to persist in local storage or the cloud
+const getTaggedDomains = superO => {
+  // The tags we should tag our root domains with
+  // TODO: Our tagData should ultimately be located in local storage or cloud storage
+  const tagData = {
+    developer : [ 'stackoverflow', 'github', 'stackexchange', 'promisesaplus', 'chaijs' ],
+    social: [ 'facebook' ],
+    news: [ 'nbc', 'yahoo' ]
+  };
+
+  const taggedDomains = {};
+
+  // Simply goes through each url and tag it
+  for (let base in superO) {
+    superO[base].forEach(tab => {
+      for (let tag in tagData) {
+        if (tagData[tag].includes(tab.url)) {
+          taggedDomains[tab.url] = tag;
+          break;
+        }
+        else taggedDomains[tab.url] = 'untagged';
+      }
+    });
+  }
+
+  return taggedDomains;
+};
+
 
 module.exports = {
   getBaseDomain,
   getAllTabIds,
+  getTaggedDomains,
 };

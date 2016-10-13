@@ -3,55 +3,71 @@ const helpers = require('./shared/helpers.js');
 
 const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
 
+// Changes made to options
+let selectedOption;
+
 // Listens to option changes
 // Each option change should render a preview
 const organizeTypeDropdownEl = document.getElementById('organize-type-dropdown');
-// organizeTypeDropdownEl.addEventListener('change', () => {
-//   const contentEl = document.getElementById('content');
-//
-//   // Use the index to handle what preview render function to run
-// selectedOption = organizeTypeDropdownEl.selectedIndex;
-//
-//   switch (selectedOption) {
-//     case 0:
-//       contentEl.innerHTML = '';
-//       break;
-//     case 1:
-//       const taggedDomains = getTaggedDomains();
-//
-//       // Append a list of tagged items
-//       const taggedDomainListEl = document.createElement('ul');
-//       taggedDomainListEl.id = 'preview-list';
-//       taggedDomainListEl.className = 'list-group';
-//
-//       for (let domain in taggedDomains) {
-//         // Skip unknown domains
-//         if (domain === 'undefined') continue;
-//
-//         const taggedDomainListItemEl = document.createElement('li');
-//         taggedDomainListItemEl.className = 'list-group-item';
-//
-//         const taggedDomainListItemSpanEl = document.createElement('span');
-//         taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
-//         taggedDomainListItemSpanElText = document.createTextNode(taggedDomains[domain]);
-//         taggedDomainListItemSpanEl.appendChild(taggedDomainListItemSpanElText);
-//         taggedDomainListItemEl.appendChild(taggedDomainListItemSpanEl);
-//
-//         const textNode = document.createTextNode(domain);
-//         taggedDomainListItemEl.appendChild(textNode);
-//         taggedDomainListEl.appendChild(taggedDomainListItemEl);
-//       }
-//
-//       contentEl.appendChild(taggedDomainListEl);
-//       break;
-//     }
-// });
+organizeTypeDropdownEl.addEventListener('change', () => {
+  new Promise((resolve, reject) => {
+    // Sets window filter options
+    const windowOptions = {
+      populate: true,
+      windowTypes: ['normal']
+    };
 
+    chrome.windows.getAll(windowOptions, windows => {
+      resolve(helpers.getAllTabIds(windows));
+    });
+  }).then(superO => {
+    console.log("on change called");
+    const contentEl = document.getElementById('content');
+
+    // Use the index to handle what preview render function to run
+    selectedOption = organizeTypeDropdownEl.selectedIndex;
+    console.log(selectedOption);
+    switch (selectedOption) {
+      case 0:
+        contentEl.innerHTML = '';
+        break;
+      case 1:
+        const taggedDomains = helpers.getTaggedDomains(superO);
+
+        // Append a list of tagged items
+        const taggedDomainListEl = document.createElement('ul');
+        taggedDomainListEl.id = 'preview-list';
+        taggedDomainListEl.className = 'list-group';
+
+        console.log(taggedDomains);
+        for (let domain in taggedDomains) {
+          console.log(domain);
+          // Skip unknown domains
+          if (domain === 'undefined') continue;
+
+          const taggedDomainListItemEl = document.createElement('li');
+          taggedDomainListItemEl.className = 'list-group-item';
+
+          const taggedDomainListItemSpanEl = document.createElement('span');
+          taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
+          taggedDomainListItemSpanElText = document.createTextNode(taggedDomains[domain]);
+          taggedDomainListItemSpanEl.appendChild(taggedDomainListItemSpanElText);
+          taggedDomainListItemEl.appendChild(taggedDomainListItemSpanEl);
+
+          const textNode = document.createTextNode(domain);
+          taggedDomainListItemEl.appendChild(textNode);
+          taggedDomainListEl.appendChild(taggedDomainListItemEl);
+        }
+        console.log(taggedDomainListEl);
+        contentEl.appendChild(taggedDomainListEl);
+        break;
+    }
+  });
+});
 
 // On button click, it should sort our tabs
 // TODO: refactor so callback is dynamic
 const organizeTabsBtnEl = document.getElementById('organize-tab-btn');
-let selectedOption = organizeTypeDropdownEl.selectedIndex;
 
 organizeTabsBtnEl.addEventListener('click', () => {
   switch (selectedOption) {
@@ -59,7 +75,6 @@ organizeTabsBtnEl.addEventListener('click', () => {
       sortTabsByTagName();
       break;
     default:
-      // sortTabsByBaseDomain();
       chrome.runtime.sendMessage(EXTENSION_ID, 'sortByBaseDomain');
   }
 });
@@ -112,9 +127,38 @@ const getAllTabIds = windows => {
   return urls;
 };
 
+// Restructure our data to have tags
+// TODO: This data will need to persist in local storage or the cloud
+const getTaggedDomains = superO => {
+  // The tags we should tag our root domains with
+  // TODO: Our tagData should ultimately be located in local storage or cloud storage
+  const tagData = {
+    developer: ['stackoverflow', 'github', 'stackexchange', 'promisesaplus', 'chaijs'],
+    social: ['facebook'],
+    news: ['nbc', 'yahoo']
+  };
+
+  const taggedDomains = {};
+
+  // Simply goes through each url and tag it
+  for (let base in superO) {
+    superO[base].forEach(tab => {
+      for (let tag in tagData) {
+        if (tagData[tag].includes(tab.url)) {
+          taggedDomains[tab.url] = tag;
+          break;
+        } else taggedDomains[tab.url] = 'untagged';
+      }
+    });
+  }
+
+  return taggedDomains;
+};
+
 module.exports = {
   getBaseDomain,
-  getAllTabIds
+  getAllTabIds,
+  getTaggedDomains
 };
 
 },{}]},{},[1]);

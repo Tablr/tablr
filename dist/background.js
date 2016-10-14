@@ -6,135 +6,160 @@ const helpers = require('./shared/helpers.js');
 // that everything will use
 
 chrome.runtime.onMessage.addListener(message => {
-  new Promise((resolve, reject) => {
-    // Sets window filter options
-    const windowOptions = {
-      populate: true,
-      windowTypes: ['normal']
-    };
+    new Promise((resolve, reject) => {
+        // Sets window filter options
+        const windowOptions = {
+            populate: true,
+            windowTypes: ['normal']
+        };
 
-    chrome.windows.getAll(windowOptions, windows => {
-      resolve(helpers.getAllTabIds(windows));
+        chrome.windows.getAll(windowOptions, windows => {
+            resolve(helpers.getAllTabIds(windows));
+        });
+    }).then(superO => {
+        switch (message) {
+            case 'sortByBaseDomain':
+                sortTabsByBaseDomain(superO);
+                break;
+            case 'sortByTagName':
+                sortTabsByTagName(superO);
+                break;
+            default:
+                break;
+        };
     });
-  }).then(superO => {
-    switch (message) {
-      case 'sortByBaseDomain':
-        sortTabsByBaseDomain(superO);
-        break;
-      case 'sortByTagName':
-        console.log('sortByTagName');
-        sortTabsByTagName(superO);
-        break;
-      default:
-        break;
-    };
-  });
 });
 
 /* FEATURES */
 // Default functionality - sort tabs by base domain
 function sortTabsByBaseDomain(superO) {
-  for (let base in superO) {
-    // We need to get the first tab to set as the first tab in the new window
-    const firstTab = superO[base].pop();
+    for (let base in superO) {
+        // We need to get the first tab to set as the first tab in the new window
+        const firstTab = superO[base].pop();
 
-    // We should check for when there are no single domains
-    if (!firstTab) continue;
+        // We should check for when there are no single domains
+        if (!firstTab) continue;
 
-    chrome.windows.create({ tabId: firstTab.id }, window => {
-      // Set up the array of tabs to move to the new window
-      const arrOfTabs = superO[base].map(tab => tab.id);
-      chrome.tabs.move(arrOfTabs, { windowId: window.id, index: -1 });
-    });
-  };
+        chrome.windows.create({
+            tabId: firstTab.id
+        }, window => {
+            // Set up the array of tabs to move to the new window
+            const arrOfTabs = superO[base].map(tab => tab.id);
+            chrome.tabs.move(arrOfTabs, {
+                windowId: window.id,
+                index: -1
+            });
+        });
+    }
 }
 
 // Sort Tabs by Tag Name
 // TODO:
 function sortTabsByTagName(superO) {
-  const taggedDomains = helpers.getTaggedDomains(superO);
+    const taggedDomains = helpers.getTaggedDomains(superO);
+    const taggedIds = {};
+    for (domain in taggedDomains) {
+        if (domain === undefined || superO[domain] === undefined) {
+            continue;
+        }
+        //handle domains
+        if (!taggedIds[taggedDomains[domain]]) {
+            taggedIds[taggedDomains[domain]] = [];
+        }
+        taggedIds[taggedDomains[domain]] = taggedIds[taggedDomains[domain]].concat(superO[domain]);
+    };
+    //handle singles
+    superO["singles"].forEach(domainObj => {
+        if (domainObj[taggedDomains[domainObj.url]]) {
+            taggedIds[taggedDomains[domainObj.url]].concat([domainObj]);
+        }
+    });
+    sortTabsByBaseDomain(taggedIds);
 };
 
 },{"./shared/helpers.js":2}],2:[function(require,module,exports){
 /*** Classes ***/
 class Tab {
-  constructor(id, url) {
-    this.id = id;
-    this.url = url;
-  }
+    constructor(id, url) {
+        this.id = id;
+        this.url = url;
+    }
 }
 
 // Get base domain
 const getBaseDomain = url => {
-  // thanks to anubhava on Stack Overflow: http://stackoverflow.com/questions/25703360/regular-expression-extract-subdomain-domain
-  let domainRegex = /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im;
-  let baseDomain = domainRegex.exec(url)[1];
-  let baseDomainArr = baseDomain.split('.');
+    // thanks to anubhava on Stack Overflow: http://stackoverflow.com/questions/25703360/regular-expression-extract-subdomain-domain
+    let domainRegex = /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im;
+    let baseDomain = domainRegex.exec(url)[1];
+    let baseDomainArr = baseDomain.split('.');
 
-  return baseDomainArr[baseDomainArr.length - 2];
+    return baseDomainArr[baseDomainArr.length - 2];
 };
 
 // Gather all urls and separate by domain
 const getAllTabIds = windows => {
-  const urls = { singles: [] };
+    const urls = {
+        singles: []
+    };
 
-  // Structuring our urls with base urls and all their associated tabs
-  windows.forEach(window => {
-    window.tabs.forEach(tab => {
-      // Get the base domain for the url
-      // Ex. 'http://meta.stackoverflow.com/test' --> 'stackoverflow'
-      const baseDomain = getBaseDomain(tab.url);
+    // Structuring our urls with base urls and all their associated tabs
+    windows.forEach(window => {
+        window.tabs.forEach(tab => {
+            // Get the base domain for the url
+            // Ex. 'http://meta.stackoverflow.com/test' --> 'stackoverflow'
+            const baseDomain = getBaseDomain(tab.url);
 
-      // Update our urls with base domains and all associated Tabs
-      if (!urls[baseDomain]) urls[baseDomain] = [];
-      urls[baseDomain].push(new Tab(tab.id, baseDomain));
+            // Update our urls with base domains and all associated Tabs
+            if (!urls[baseDomain]) urls[baseDomain] = [];
+            urls[baseDomain].push(new Tab(tab.id, baseDomain));
+        });
     });
-  });
 
-  // After updating our urls, we will have a bunch of single base domains
-  // By design, we will push all of these to a single key
-  for (let base in urls) {
-    if (urls[base].length <= 1 && base !== 'singles') {
-      urls.singles.push(urls[base][0]);
-      delete urls[base];
+    // After updating our urls, we will have a bunch of single base domains
+    // By design, we will push all of these to a single key
+    for (let base in urls) {
+        if (urls[base].length <= 1 && base !== 'singles') {
+            urls.singles.push(urls[base][0]);
+            delete urls[base];
+        }
     }
-  }
 
-  return urls;
+    return urls;
 };
 
 // Restructure our data to have tags
 // TODO: This data will need to persist in local storage or the cloud
 const getTaggedDomains = superO => {
-  // The tags we should tag our root domains with
-  // TODO: Our tagData should ultimately be located in local storage or cloud storage
-  const tagData = {
-    developer: ['stackoverflow', 'github', 'stackexchange', 'promisesaplus', 'chaijs'],
-    social: ['facebook'],
-    news: ['nbc', 'yahoo']
-  };
+    // The tags we should tag our root domains with
+    // TODO: Our tagData should ultimately be located in local storage or cloud storage
+    const tagData = {
+        developer: ['stackoverflow', 'github', 'stackexchange', 'chaijs'],
+        social: ['facebook', 'instagram', 'twitter'],
+        news: ['nbc', 'yahoo'],
+        sports: ['nba', 'nfl']
+    };
 
-  const taggedDomains = {};
+    const taggedDomains = {};
 
-  // Simply goes through each url and tag it
-  for (let base in superO) {
-    superO[base].forEach(tab => {
-      for (let tag in tagData) {
-        if (tagData[tag].includes(tab.url)) {
-          taggedDomains[tab.url] = tag;
-          break;
-        } else taggedDomains[tab.url] = 'untagged';
-      }
-    });
-  }
+    // Simply goes through each url and tag it
+    for (let base in superO) {
+        superO[base].forEach(tab => {
+            for (let tag in tagData) {
+                if (tagData[tag].includes(tab.url)) {
+                    taggedDomains[tab.url] = tag;
+                    break;
+                } else taggedDomains[tab.url] = 'untagged';
+            }
+        });
+    }
 
-  return taggedDomains;
+    return taggedDomains;
 };
 
 module.exports = {
-  getBaseDomain,
-  getAllTabIds,
-  getTaggedDomains
+    getBaseDomain,
+    getAllTabIds,
+    getTaggedDomains
 };
 
 },{}]},{},[1]);

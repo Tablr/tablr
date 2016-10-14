@@ -1,0 +1,34 @@
+{
+  "name": "tablr",
+  "version": "1.0.0",
+  "description": "tablr is a chrome extension that helps you organize your tabs with intelligent tab sorting algorithms!",
+  "main": "gulpfile.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tablr/tablr.git"
+  },
+  "keywords": [
+    "tablr",
+    "chrome",
+    "extension",
+    "tab",
+    "organization",
+    "productivity"
+  ],
+  "author": "Martin Ting",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tablr/tablr/issues"
+  },
+  "homepage": "https://github.com/Tablr/tablr#readme",
+  "dependencies": {
+    "babelify": "^7.3.0",
+    "browserify": "^13.1.0",
+    "gulp": "^3.9.1",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  }
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="bootstrap.min.css">
+
+    <style>
+        body {
+            width: 300px;
+        }
+
+        option {
+            font-weight: bold;
+        }
+
+        button,
+        select {
+            height: 40px;
+            width: 100%;
+        }
+
+        button: {
+            overflow: auto;
+        }
+    </style>
+    <title>tablr</title>
+</head>
+
+<body>
+    <select id="organize-type-dropdown" class="custom-select">
+      <h3>Organize By:</h3>
+      <option value="0">Domain</option>
+      <option value="1">Tags</option>
+    </select>
+
+    <div id="content"></div>
+
+    <button id="organize-tab-btn" class="btn btn-success" type="button" name="Organize Tabs!">Organize Tabs</button>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

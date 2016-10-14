@@ -1,6 +1,6 @@
 const helpers = require('./shared/helpers.js');
 
-const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
+const EXTENSION_ID = 'bfbgbpfjacnnhmiblcgpknjegdmihnpj';
 
 // Changes made to options
 let selectedOption;

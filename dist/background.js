@@ -150,9 +150,20 @@ const getTaggedDomains = superO => {
                 if (!(domain in tagData)) tagData[domain] = 'untagged';
             }
 
+<<<<<<< HEAD
             superO.singles.forEach(tab => {
                 if (!(tab.url in tagData)) tagData[tab.url] = 'untagged';
             });
+||||||| merged common ancestors
+    const taggedDomains = {};
+=======
+    // Get remote storage data
+    chrome.storage.sync.get(data => {
+        console.log(data);
+    });
+
+    const taggedDomains = {};
+>>>>>>> origin/cloud-storage
 
             chrome.storage.sync.set(tagData);
             resolve(tagData);

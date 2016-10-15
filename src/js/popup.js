@@ -1,7 +1,5 @@
-const helpers = require('./shared/helpers.js');
-
-// const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
-const EXTENSION_ID = 'mgdfdhggonomidcomenkkkdjpbppknfj';
+const helpers = require('./shared/helpers');
+const config = require('./config');
 
 // Changes made to options
 let selectedOption;
@@ -70,9 +68,9 @@ const organizeTabsBtnEl = document.getElementById('organize-tab-btn');
 organizeTabsBtnEl.addEventListener('click', () => {
     switch (selectedOption) {
         case 1:
-            chrome.runtime.sendMessage(EXTENSION_ID, 'sortByTagName');
+            chrome.runtime.sendMessage(config.EXTENSION_ID, 'sortByTagName');
             break;
         default:
-            chrome.runtime.sendMessage(EXTENSION_ID, 'sortByBaseDomain');
+            chrome.runtime.sendMessage(config.EXTENSION_ID, 'sortByBaseDomain');
     }
 });

@@ -1,8 +1,13 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-const helpers = require('./shared/helpers.js');
-
-// const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
 const EXTENSION_ID = 'mgdfdhggonomidcomenkkkdjpbppknfj';
+
+module.exports = {
+  EXTENSION_ID
+};
+
+},{}],2:[function(require,module,exports){
+const helpers = require('./shared/helpers');
+const config = require('./config');
 
 // Changes made to options
 let selectedOption;
@@ -71,14 +76,14 @@ const organizeTabsBtnEl = document.getElementById('organize-tab-btn');
 organizeTabsBtnEl.addEventListener('click', () => {
     switch (selectedOption) {
         case 1:
-            chrome.runtime.sendMessage(EXTENSION_ID, 'sortByTagName');
+            chrome.runtime.sendMessage(config.EXTENSION_ID, 'sortByTagName');
             break;
         default:
-            chrome.runtime.sendMessage(EXTENSION_ID, 'sortByBaseDomain');
+            chrome.runtime.sendMessage(config.EXTENSION_ID, 'sortByBaseDomain');
     }
 });
 
-},{"./shared/helpers.js":3}],2:[function(require,module,exports){
+},{"./config":1,"./shared/helpers":4}],3:[function(require,module,exports){
 class Tab {
     constructor(id, url) {
         this.id = id;
@@ -88,7 +93,7 @@ class Tab {
 
 module.exports = Tab;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 const Tab = require('./Tab');
 
 // Get base domain
@@ -165,4 +170,4 @@ module.exports = {
     getTaggedDomains
 };
 
-},{"./Tab":2}]},{},[1]);
+},{"./Tab":3}]},{},[2]);

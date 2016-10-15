@@ -1,6 +1,7 @@
 const helpers = require('./shared/helpers.js');
 
-const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
+// const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
+const EXTENSION_ID = 'mgdfdhggonomidcomenkkkdjpbppknfj';
 
 // Changes made to options
 let selectedOption;
@@ -29,32 +30,34 @@ organizeTypeDropdownEl.addEventListener('change', () => {
                 contentEl.innerHTML = '';
                 break;
             case 1:
-                const taggedDomains = helpers.getTaggedDomains(superO);
+                helpers.getTaggedDomains(superO).then(taggedDomains => {
+                    // Append a list of tagged items
+                    const taggedDomainListEl = document.createElement('ul');
+                    taggedDomainListEl.id = 'preview-list';
+                    taggedDomainListEl.className = 'list-group';
 
-                // Append a list of tagged items
-                const taggedDomainListEl = document.createElement('ul');
-                taggedDomainListEl.id = 'preview-list';
-                taggedDomainListEl.className = 'list-group';
+                    for (let domain in taggedDomains) {
+                        // Skip unknown domains
+                        if (domain === 'undefined') continue;
 
-                for (let domain in taggedDomains) {
-                    // Skip unknown domains
-                    if (domain === 'undefined') continue;
+                        const taggedDomainListItemEl = document.createElement('li');
+                        taggedDomainListItemEl.className = 'list-group-item';
 
-                    const taggedDomainListItemEl = document.createElement('li');
-                    taggedDomainListItemEl.className = 'list-group-item';
+                        const taggedDomainListItemSpanEl = document.createElement('span');
+                        taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
+                        taggedDomainListItemSpanElText = document.createTextNode(taggedDomains[domain]);
+                        taggedDomainListItemSpanEl.appendChild(taggedDomainListItemSpanElText);
+                        taggedDomainListItemEl.appendChild(taggedDomainListItemSpanEl);
 
-                    const taggedDomainListItemSpanEl = document.createElement('span');
-                    taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
-                    taggedDomainListItemSpanElText = document.createTextNode(taggedDomains[domain]);
-                    taggedDomainListItemSpanEl.appendChild(taggedDomainListItemSpanElText);
-                    taggedDomainListItemEl.appendChild(taggedDomainListItemSpanEl);
+                        const textNode = document.createTextNode(domain);
+                        taggedDomainListItemEl.appendChild(textNode);
+                        taggedDomainListEl.appendChild(taggedDomainListItemEl);
+                    }
 
-                    const textNode = document.createTextNode(domain);
-                    taggedDomainListItemEl.appendChild(textNode);
-                    taggedDomainListEl.appendChild(taggedDomainListItemEl);
-                }
-
-                contentEl.appendChild(taggedDomainListEl);
+                    contentEl.appendChild(taggedDomainListEl);
+                    return;
+                });
+            default:
                 break;
         }
     });

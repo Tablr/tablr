@@ -1,7 +1,8 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 const helpers = require('./shared/helpers.js');
 
-const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
+// const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
+const EXTENSION_ID = 'mgdfdhggonomidcomenkkkdjpbppknfj';
 
 // Changes made to options
 let selectedOption;
@@ -30,32 +31,34 @@ organizeTypeDropdownEl.addEventListener('change', () => {
                 contentEl.innerHTML = '';
                 break;
             case 1:
-                const taggedDomains = helpers.getTaggedDomains(superO);
+                helpers.getTaggedDomains(superO).then(taggedDomains => {
+                    // Append a list of tagged items
+                    const taggedDomainListEl = document.createElement('ul');
+                    taggedDomainListEl.id = 'preview-list';
+                    taggedDomainListEl.className = 'list-group';
 
-                // Append a list of tagged items
-                const taggedDomainListEl = document.createElement('ul');
-                taggedDomainListEl.id = 'preview-list';
-                taggedDomainListEl.className = 'list-group';
+                    for (let domain in taggedDomains) {
+                        // Skip unknown domains
+                        if (domain === 'undefined') continue;
 
-                for (let domain in taggedDomains) {
-                    // Skip unknown domains
-                    if (domain === 'undefined') continue;
+                        const taggedDomainListItemEl = document.createElement('li');
+                        taggedDomainListItemEl.className = 'list-group-item';
 
-                    const taggedDomainListItemEl = document.createElement('li');
-                    taggedDomainListItemEl.className = 'list-group-item';
+                        const taggedDomainListItemSpanEl = document.createElement('span');
+                        taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
+                        taggedDomainListItemSpanElText = document.createTextNode(taggedDomains[domain]);
+                        taggedDomainListItemSpanEl.appendChild(taggedDomainListItemSpanElText);
+                        taggedDomainListItemEl.appendChild(taggedDomainListItemSpanEl);
 
-                    const taggedDomainListItemSpanEl = document.createElement('span');
-                    taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
-                    taggedDomainListItemSpanElText = document.createTextNode(taggedDomains[domain]);
-                    taggedDomainListItemSpanEl.appendChild(taggedDomainListItemSpanElText);
-                    taggedDomainListItemEl.appendChild(taggedDomainListItemSpanEl);
+                        const textNode = document.createTextNode(domain);
+                        taggedDomainListItemEl.appendChild(textNode);
+                        taggedDomainListEl.appendChild(taggedDomainListItemEl);
+                    }
 
-                    const textNode = document.createTextNode(domain);
-                    taggedDomainListItemEl.appendChild(textNode);
-                    taggedDomainListEl.appendChild(taggedDomainListItemEl);
-                }
-
-                contentEl.appendChild(taggedDomainListEl);
+                    contentEl.appendChild(taggedDomainListEl);
+                    return;
+                });
+            default:
                 break;
         }
     });
@@ -75,8 +78,7 @@ organizeTabsBtnEl.addEventListener('click', () => {
     }
 });
 
-},{"./shared/helpers.js":2}],2:[function(require,module,exports){
-/*** Classes ***/
+},{"./shared/helpers.js":3}],2:[function(require,module,exports){
 class Tab {
     constructor(id, url) {
         this.id = id;
@@ -84,9 +86,15 @@ class Tab {
     }
 }
 
+module.exports = Tab;
+
+},{}],3:[function(require,module,exports){
+const Tab = require('./Tab');
+
 // Get base domain
 const getBaseDomain = url => {
-    // thanks to anubhava on Stack Overflow: http://stackoverflow.com/questions/25703360/regular-expression-extract-subdomain-domain
+    // thanks to anubhava on Stack Overflow:
+    // http://stackoverflow.com/questions/25703360/regular-expression-extract-subdomain-domain
     let domainRegex = /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im;
     let baseDomain = domainRegex.exec(url)[1];
     let baseDomainArr = baseDomain.split('.');
@@ -127,31 +135,23 @@ const getAllTabIds = windows => {
 
 // Restructure our data to have tags
 // TODO: This data will need to persist in local storage or the cloud
+// This is ASYNCHRONOUS it returns a Promise, so handle it properly =)
 const getTaggedDomains = superO => {
-    // The tags we should tag our root domains with
-    // TODO: Our tagData should ultimately be located in local storage or cloud storage
-    const tagData = {
-        developer: ['stackoverflow', 'github', 'stackexchange', 'chaijs'],
-        social: ['facebook', 'instagram', 'twitter'],
-        news: ['nbc', 'yahoo'],
-        sports: ['nba', 'nfl']
-    };
-
-    const taggedDomains = {};
-
-    // Simply goes through each url and tag it
-    for (let base in superO) {
-        superO[base].forEach(tab => {
-            for (let tag in tagData) {
-                if (tagData[tag].includes(tab.url)) {
-                    taggedDomains[tab.url] = tag;
-                    break;
-                } else taggedDomains[tab.url] = 'untagged';
+    return new Promise((resolve, reject) => {
+        chrome.storage.sync.get(tagData => {
+            for (let domain in superO) {
+                if (domain === 'singles') continue;
+                if (!(domain in tagData)) tagData[domain] = 'untagged';
             }
-        });
-    }
 
-    return taggedDomains;
+            superO.singles.forEach(tab => {
+                if (!(tab.url in tagData)) tagData[tab.url] = 'untagged';
+            });
+
+            chrome.storage.sync.set(tagData);
+            resolve(tagData);
+        });
+    });
 };
 
 module.exports = {
@@ -160,4 +160,4 @@ module.exports = {
     getTaggedDomains
 };
 
-},{}]},{},[1]);
+},{"./Tab":2}]},{},[1]);

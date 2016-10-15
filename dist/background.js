@@ -141,32 +141,26 @@ const getAllTabIds = windows => {
 
 // Restructure our data to have tags
 // TODO: This data will need to persist in local storage or the cloud
+
 // This is ASYNCHRONOUS it returns a Promise, so handle it properly =)
 const getTaggedDomains = superO => {
     return new Promise((resolve, reject) => {
         chrome.storage.sync.get(tagData => {
+            const tagDomains = {};
+
             for (let domain in superO) {
                 if (domain === 'singles') continue;
                 if (!(domain in tagData)) tagData[domain] = 'untagged';
+                tagDomains[domain] = tagData[domain];
             }
 
-<<<<<<< HEAD
             superO.singles.forEach(tab => {
                 if (!(tab.url in tagData)) tagData[tab.url] = 'untagged';
+                tagDomains[tab.url] = tagData[tab.url];
             });
-||||||| merged common ancestors
-    const taggedDomains = {};
-=======
-    // Get remote storage data
-    chrome.storage.sync.get(data => {
-        console.log(data);
-    });
-
-    const taggedDomains = {};
->>>>>>> origin/cloud-storage
 
             chrome.storage.sync.set(tagData);
-            resolve(tagData);
+            resolve(tagDomains);
         });
     });
 };

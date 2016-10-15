@@ -30,43 +30,18 @@ organizeTypeDropdownEl.addEventListener('change', () => {
                 contentEl.innerHTML = '';
                 break;
             case 1:
-<<<<<<< HEAD
                 helpers.getTaggedDomains(superO).then(taggedDomains => {
                     // Append a list of tagged items
                     const taggedDomainListEl = document.createElement('ul');
                     taggedDomainListEl.id = 'preview-list';
                     taggedDomainListEl.className = 'list-group';
-||||||| merged common ancestors
-                const taggedDomains = helpers.getTaggedDomains(superO);
-=======
-                helpers.getTaggedDomains(superO).then(taggedDomains => {
-                  // Append a list of tagged items
-                  const taggedDomainListEl = document.createElement('ul');
-                  taggedDomainListEl.id = 'preview-list';
-                  taggedDomainListEl.className = 'list-group';
->>>>>>> origin/cloud-storage
 
-<<<<<<< HEAD
                     for (let domain in taggedDomains) {
                         // Skip unknown domains
                         if (domain === 'undefined') continue;
 
                         const taggedDomainListItemEl = document.createElement('li');
                         taggedDomainListItemEl.className = 'list-group-item';
-||||||| merged common ancestors
-                // Append a list of tagged items
-                const taggedDomainListEl = document.createElement('ul');
-                taggedDomainListEl.id = 'preview-list';
-                taggedDomainListEl.className = 'list-group';
-
-                for (let domain in taggedDomains) {
-                    // Skip unknown domains
-                    if (domain === 'undefined') continue;
-=======
-                  for (let domain in taggedDomains) {
-                    // Skip unknown domains
-                    if (domain === 'undefined') continue;
->>>>>>> origin/cloud-storage
 
                         const taggedDomainListItemSpanEl = document.createElement('span');
                         taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
@@ -79,32 +54,11 @@ organizeTypeDropdownEl.addEventListener('change', () => {
                         taggedDomainListEl.appendChild(taggedDomainListItemEl);
                     }
 
-<<<<<<< HEAD
                     contentEl.appendChild(taggedDomainListEl);
                     return;
                 });
             default:
                 break;
-||||||| merged common ancestors
-                    const textNode = document.createTextNode(domain);
-                    taggedDomainListItemEl.appendChild(textNode);
-                    taggedDomainListEl.appendChild(taggedDomainListItemEl);
-                }
-
-                contentEl.appendChild(taggedDomainListEl);
-                break;
-=======
-                    const textNode = document.createTextNode(domain);
-                    taggedDomainListItemEl.appendChild(textNode);
-                    taggedDomainListEl.appendChild(taggedDomainListItemEl);
-                  }
-
-                  contentEl.appendChild(taggedDomainListEl);
-                  break;
-                });
-            default:
-              break;
->>>>>>> origin/cloud-storage
         }
     });
 });

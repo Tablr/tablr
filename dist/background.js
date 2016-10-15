@@ -139,6 +139,11 @@ const getTaggedDomains = superO => {
         sports: ['nba', 'nfl']
     };
 
+    // Get remote storage data
+    chrome.storage.sync.get(data => {
+        console.log(data);
+    });
+
     const taggedDomains = {};
 
     // Simply goes through each url and tag it

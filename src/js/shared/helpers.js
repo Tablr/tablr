@@ -49,33 +49,22 @@ const getAllTabIds = windows => {
 
 // Restructure our data to have tags
 // TODO: This data will need to persist in local storage or the cloud
-const getTaggedDomains =
-    superO => {
+// This is ASYNCHRONOUS it returns a Promise, so handle it properly =)
+const getTaggedDomains = superO => {
+    // Get remote storage data
+    return new Promise((resolve, reject) => {
+      chrome.storage.sync.get(tagData => {
         // The tags we should tag our root domains with
         // TODO: Our tagData should ultimately be located in local storage or cloud storage
-        const tagData = {
-            developer: ['stackoverflow', 'github', 'stackexchange', 'chaijs'],
-            social: ['facebook', 'instagram', 'twitter'],
-            news: ['nbc', 'yahoo'],
-            sports: ['nba', 'nfl']
-        };
-
-        const taggedDomains = {};
-
-        // Simply goes through each url and tag it
-        for (let base in superO) {
-            superO[base].forEach(tab => {
-                for (let tag in tagData) {
-                    if (tagData[tag].includes(tab.url)) {
-                        taggedDomains[tab.url] = tag;
-                        break;
-                    } else taggedDomains[tab.url] = 'untagged';
-                }
-            });
-        }
-
-        return taggedDomains;
-    };
+        // const tagData = {
+        //   developer: ['stackoverflow', 'github', 'stackexchange', 'chaijs'],
+        //   social: ['facebook', 'instagram', 'twitter'],
+        //   news: ['nbc', 'yahoo'],
+        //   sports: ['nba', 'nfl']
+        // };
+        resolve(tagData);
+    });
+};
 
 
 module.exports = {

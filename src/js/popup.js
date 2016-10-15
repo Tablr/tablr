@@ -29,14 +29,13 @@ organizeTypeDropdownEl.addEventListener('change', () => {
                 contentEl.innerHTML = '';
                 break;
             case 1:
-                const taggedDomains = helpers.getTaggedDomains(superO);
+                helpers.getTaggedDomains(superO).then(taggedDomains => {
+                  // Append a list of tagged items
+                  const taggedDomainListEl = document.createElement('ul');
+                  taggedDomainListEl.id = 'preview-list';
+                  taggedDomainListEl.className = 'list-group';
 
-                // Append a list of tagged items
-                const taggedDomainListEl = document.createElement('ul');
-                taggedDomainListEl.id = 'preview-list';
-                taggedDomainListEl.className = 'list-group';
-
-                for (let domain in taggedDomains) {
+                  for (let domain in taggedDomains) {
                     // Skip unknown domains
                     if (domain === 'undefined') continue;
 
@@ -52,10 +51,13 @@ organizeTypeDropdownEl.addEventListener('change', () => {
                     const textNode = document.createTextNode(domain);
                     taggedDomainListItemEl.appendChild(textNode);
                     taggedDomainListEl.appendChild(taggedDomainListItemEl);
-                }
+                  }
 
-                contentEl.appendChild(taggedDomainListEl);
-                break;
+                  contentEl.appendChild(taggedDomainListEl);
+                  break;
+                });
+            default:
+              break;
         }
     });
 });

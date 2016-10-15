@@ -15,3 +15,10 @@ tablr is a chrome extension that uses intelligent sorting algorithms to organize
 5. Run gulp to build tablr
 6. Navigate to the extensions page and reload tablr
 7. tablr is now set up and ready to run!
+
+======
+# Commit Guide
+We recommend using the [Udacity Style Guide for commits](https://udacity.github.io/git-styleguide/) to format your commit messages.
+
+======
+# Build Guide

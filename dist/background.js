@@ -1,5 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-const helpers = require('./shared/helpers.js');
+const helpers = require('./shared/helpers');
+const Tab = require('./shared/Tab');
 
 /**********************************************************************/
 // We need super wrapper that does the initial gather of our data
@@ -33,9 +34,49 @@ chrome.runtime.onMessage.addListener(message => {
 /* FEATURES */
 // Default functionality - sort tabs by base domain
 function sortTabsByBaseDomain(superO) {
+    const normalized = Object.assign({}, superO, {
+        singles: []
+    });
+
+    // After updating our urls, we will have a bunch of single base domains
+    // By design, we will push all of these to a single key
     for (let base in superO) {
+        if (superO[base].length <= 1) normalized.singles.push(superO[base][0]);
+    }
+
+    sort(normalized);
+}
+
+// Sort Tabs by Tag Name
+function sortTabsByTagName(superO) {
+    helpers.getTaggedDomains(superO).then(taggedDomains => {
+        const normalized = {};
+
+        for (let domain in taggedDomains) {
+            if (domain === undefined) continue;
+            if (domain in superO) {
+                const tag = taggedDomains[domain];
+                if (!normalized[tag]) normalized[tag] = [];
+                normalized[tag] = normalized[tag].concat(superO[domain]);
+            }
+        }
+
+        // superO.singles.forEach(tab => {
+        //     const tag = taggedDomains[tab.url];
+        //     if (!normalized[tag]) normalized[tag] = [];
+        //     normalized[tag] = normalized[tag].concat(new Tab(tab.id, tab.url));
+        // });
+
+        sort(normalized);
+    }).catch(() => console.log('Error retrieving data'));
+};
+
+// Normalized objects should take the form of
+// { [any] = [ Tab:(id, url) ] }
+function sort(normalizedObject) {
+    for (let base in normalizedObject) {
         // We need to get the first tab to set as the first tab in the new window
-        const firstTab = superO[base].pop();
+        const firstTab = normalizedObject[base].pop();
 
         // We should check for when there are no single domains
         if (!firstTab) continue;
@@ -44,7 +85,7 @@ function sortTabsByBaseDomain(superO) {
             tabId: firstTab.id
         }, window => {
             // Set up the array of tabs to move to the new window
-            const arrOfTabs = superO[base].map(tab => tab.id);
+            const arrOfTabs = normalizedObject[base].map(tab => tab.id);
             chrome.tabs.move(arrOfTabs, {
                 windowId: window.id,
                 index: -1
@@ -53,32 +94,7 @@ function sortTabsByBaseDomain(superO) {
     }
 }
 
-// Sort Tabs by Tag Name
-// TODO:
-function sortTabsByTagName(superO) {
-    const taggedDomains = helpers.getTaggedDomains(superO);
-    const taggedIds = {};
-    for (domain in taggedDomains) {
-        if (domain === undefined || superO[domain] === undefined) {
-            continue;
-        }
-        //handle domains
-        if (!taggedIds[taggedDomains[domain]]) {
-            taggedIds[taggedDomains[domain]] = [];
-        }
-        taggedIds[taggedDomains[domain]] = taggedIds[taggedDomains[domain]].concat(superO[domain]);
-    };
-    //handle singles
-    superO["singles"].forEach(domainObj => {
-        if (domainObj[taggedDomains[domainObj.url]]) {
-            taggedIds[taggedDomains[domainObj.url]].concat([domainObj]);
-        }
-    });
-    sortTabsByBaseDomain(taggedIds);
-};
-
-},{"./shared/helpers.js":2}],2:[function(require,module,exports){
-/*** Classes ***/
+},{"./shared/Tab":2,"./shared/helpers":3}],2:[function(require,module,exports){
 class Tab {
     constructor(id, url) {
         this.id = id;
@@ -86,9 +102,15 @@ class Tab {
     }
 }
 
+module.exports = Tab;
+
+},{}],3:[function(require,module,exports){
+const Tab = require('./Tab');
+
 // Get base domain
 const getBaseDomain = url => {
-    // thanks to anubhava on Stack Overflow: http://stackoverflow.com/questions/25703360/regular-expression-extract-subdomain-domain
+    // thanks to anubhava on Stack Overflow:
+    // http://stackoverflow.com/questions/25703360/regular-expression-extract-subdomain-domain
     let domainRegex = /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im;
     let baseDomain = domainRegex.exec(url)[1];
     let baseDomainArr = baseDomain.split('.');
@@ -98,9 +120,7 @@ const getBaseDomain = url => {
 
 // Gather all urls and separate by domain
 const getAllTabIds = windows => {
-    const urls = {
-        singles: []
-    };
+    const urls = {};
 
     // Structuring our urls with base urls and all their associated tabs
     windows.forEach(window => {
@@ -115,45 +135,27 @@ const getAllTabIds = windows => {
         });
     });
 
-    // After updating our urls, we will have a bunch of single base domains
-    // By design, we will push all of these to a single key
-    for (let base in urls) {
-        if (urls[base].length <= 1 && base !== 'singles') {
-            urls.singles.push(urls[base][0]);
-            delete urls[base];
-        }
-    }
-
     return urls;
 };
 
 // Restructure our data to have tags
-// TODO: This data will need to persist in local storage or the cloud
+// This is ASYNCHRONOUS it returns a Promise, so handle it properly =)
 const getTaggedDomains = superO => {
-    // The tags we should tag our root domains with
-    // TODO: Our tagData should ultimately be located in local storage or cloud storage
-    const tagData = {
-        developer: ['stackoverflow', 'github', 'stackexchange', 'chaijs'],
-        social: ['facebook', 'instagram', 'twitter'],
-        news: ['nbc', 'yahoo'],
-        sports: ['nba', 'nfl']
-    };
+    return new Promise((resolve, reject) => {
+        chrome.storage.sync.get(tagData => {
+            const tagDomains = {};
 
-    const taggedDomains = {};
-
-    // Simply goes through each url and tag it
-    for (let base in superO) {
-        superO[base].forEach(tab => {
-            for (let tag in tagData) {
-                if (tagData[tag].includes(tab.url)) {
-                    taggedDomains[tab.url] = tag;
-                    break;
-                } else taggedDomains[tab.url] = 'untagged';
+            for (let domain in superO) {
+                if (!(domain in tagData)) tagData[domain] = 'untagged';
+                tagDomains[domain] = tagData[domain];
             }
-        });
-    }
 
-    return taggedDomains;
+            // Update our storage with new urls
+            // TODO: Perhaps only sync if there are any changes
+            chrome.storage.sync.set(tagData);
+            resolve(tagDomains);
+        });
+    });
 };
 
 module.exports = {
@@ -162,4 +164,4 @@ module.exports = {
     getTaggedDomains
 };
 
-},{}]},{},[1]);
+},{"./Tab":2}]},{},[1]);

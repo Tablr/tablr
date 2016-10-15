@@ -1,22 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-<<<<<<< HEAD
 const EXTENSION_ID = 'ijokkjbnhbcajjlnpokiaeinkcaaband';
-
-module.exports = {
-  EXTENSION_ID
-};
-
-},{}],2:[function(require,module,exports){
-const helpers = require('./shared/helpers');
-const config = require('./config');
-||||||| merged common ancestors
-const helpers = require('./shared/helpers.js');
-
-// const EXTENSION_ID = 'ljpbgjanncoihbfakkppncfoghpmkpno';
-const EXTENSION_ID = 'mgdfdhggonomidcomenkkkdjpbppknfj';
-=======
-const EXTENSION_ID = 'mgdfdhggonomidcomenkkkdjpbppknfj';
->>>>>>> e829229b80811d2e536dd8ce848bce113122ddd2
 
 module.exports = {
   EXTENSION_ID
@@ -126,9 +109,7 @@ const getBaseDomain = url => {
 
 // Gather all urls and separate by domain
 const getAllTabIds = windows => {
-    const urls = {
-        singles: []
-    };
+    const urls = {};
 
     // Structuring our urls with base urls and all their associated tabs
     windows.forEach(window => {
@@ -143,21 +124,10 @@ const getAllTabIds = windows => {
         });
     });
 
-    // After updating our urls, we will have a bunch of single base domains
-    // By design, we will push all of these to a single key
-    for (let base in urls) {
-        if (urls[base].length <= 1 && base !== 'singles') {
-            urls.singles.push(urls[base][0]);
-            delete urls[base];
-        }
-    }
-
     return urls;
 };
 
 // Restructure our data to have tags
-// TODO: This data will need to persist in local storage or the cloud
-
 // This is ASYNCHRONOUS it returns a Promise, so handle it properly =)
 const getTaggedDomains = superO => {
     return new Promise((resolve, reject) => {
@@ -165,16 +135,12 @@ const getTaggedDomains = superO => {
             const tagDomains = {};
 
             for (let domain in superO) {
-                if (domain === 'singles') continue;
                 if (!(domain in tagData)) tagData[domain] = 'untagged';
                 tagDomains[domain] = tagData[domain];
             }
 
-            superO.singles.forEach(tab => {
-                if (!(tab.url in tagData)) tagData[tab.url] = 'untagged';
-                tagDomains[tab.url] = tagData[tab.url];
-            });
-
+            // Update our storage with new urls
+            // TODO: Perhaps only sync if there are any changes
             chrome.storage.sync.set(tagData);
             resolve(tagDomains);
         });

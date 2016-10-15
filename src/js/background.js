@@ -33,7 +33,17 @@ chrome.runtime.onMessage.addListener((message) => {
 /* FEATURES */
 // Default functionality - sort tabs by base domain
 function sortTabsByBaseDomain(superO) {
-    sort(superO);
+    const normalized = Object.assign({}, superO, {
+        singles: []
+    });
+
+    // After updating our urls, we will have a bunch of single base domains
+    // By design, we will push all of these to a single key
+    for (let base in superO) {
+        if (superO[base].length <= 1) normalized.singles.push(superO[base][0]);
+    }
+
+    sort(normalized);
 }
 
 // Sort Tabs by Tag Name
@@ -51,11 +61,11 @@ function sortTabsByTagName(superO) {
                 }
             }
 
-            superO.singles.forEach(tab => {
-                const tag = taggedDomains[tab.url];
-                if (!normalized[tag]) normalized[tag] = [];
-                normalized[tag] = normalized[tag].concat(new Tab(tab.id, tab.url));
-            });
+            // superO.singles.forEach(tab => {
+            //     const tag = taggedDomains[tab.url];
+            //     if (!normalized[tag]) normalized[tag] = [];
+            //     normalized[tag] = normalized[tag].concat(new Tab(tab.id, tab.url));
+            // });
 
             sort(normalized);
         })

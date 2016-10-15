@@ -1,29 +1,25 @@
 'use strict';
 
 const gulp = require('gulp');
-const babelify = require('babelify');
-const browserify = require('browserify');
-const buffer = require('vinyl-buffer');
-const source = require('vinyl-source-stream');
+const babel = require('gulp-babel');
+const copy = require('gulp-copy');
+const uglify = require('gulp-uglify');
+const watch = require('gulp-watch');
 
-gulp.task('js1', () => {
-  let bundler = browserify('src/js/popup.js');
-  bundler.transform(babelify);
-  bundler.bundle()
-    .on('error', err => console.error(err))
-    .pipe(source('popup.js'))
-    .pipe(buffer())
+gulp.task('copy', () => {
+  return gulp.src('static/**/*')
+    .pipe(copy('dist', { prefix: 1 }));
+});
+
+gulp.task('scripts', () => {
+  return gulp.src(['src/js/background.js', 'src/js/popup.js'])
+    .pipe(babel({ presets: ['es2015']}))
+    .pipe(uglify().on('error', e => console.log(e)))
     .pipe(gulp.dest('dist'));
 });
 
-gulp.task('js2', () => {
-  let bundler = browserify('src/js/background.js');
-  bundler.transform(babelify);
-  bundler.bundle()
-    .on('error', err => console.error(err))
-    .pipe(source('background.js'))
-    .pipe(buffer())
-    .pipe(gulp.dest('dist'));
+gulp.task('watch', () => {
+  gulp.watch('src/**/*', ['scripts']);
 });
 
-gulp.task('default', ['js1', 'js2']);
+gulp.task('default', ['scripts', 'watch']);

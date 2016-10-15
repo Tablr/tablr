@@ -4,7 +4,7 @@
   "description": "tablr is a chrome extension that helps you organize your tabs with intelligent tab sorting algorithms!",
   "main": "gulpfile.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "postinstall": "gulp copy && gulp"
   },
   "repository": {
     "type": "git",
@@ -25,10 +25,11 @@
   },
   "homepage": "https://github.com/Tablr/tablr#readme",
   "dependencies": {
-    "babelify": "^7.3.0",
-    "browserify": "^13.1.0",
+    "babel-preset-es2015": "^6.16.0",
     "gulp": "^3.9.1",
-    "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
+    "gulp-babel": "^6.1.2",
+    "gulp-copy": "0.0.2",
+    "gulp-uglify": "^2.0.0",
+    "gulp-watch": "^4.3.10"
   }
 }

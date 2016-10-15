@@ -34,7 +34,17 @@ chrome.runtime.onMessage.addListener(message => {
 /* FEATURES */
 // Default functionality - sort tabs by base domain
 function sortTabsByBaseDomain(superO) {
-    sort(superO);
+    const normalized = Object.assign({}, superO, {
+        singles: []
+    });
+
+    // After updating our urls, we will have a bunch of single base domains
+    // By design, we will push all of these to a single key
+    for (let base in superO) {
+        if (superO[base].length <= 1) normalized.singles.push(superO[base][0]);
+    }
+
+    sort(normalized);
 }
 
 // Sort Tabs by Tag Name
@@ -51,11 +61,11 @@ function sortTabsByTagName(superO) {
             }
         }
 
-        superO.singles.forEach(tab => {
-            const tag = taggedDomains[tab.url];
-            if (!normalized[tag]) normalized[tag] = [];
-            normalized[tag] = normalized[tag].concat(new Tab(tab.id, tab.url));
-        });
+        // superO.singles.forEach(tab => {
+        //     const tag = taggedDomains[tab.url];
+        //     if (!normalized[tag]) normalized[tag] = [];
+        //     normalized[tag] = normalized[tag].concat(new Tab(tab.id, tab.url));
+        // });
 
         sort(normalized);
     }).catch(() => console.log('Error retrieving data'));
@@ -110,9 +120,7 @@ const getBaseDomain = url => {
 
 // Gather all urls and separate by domain
 const getAllTabIds = windows => {
-    const urls = {
-        singles: []
-    };
+    const urls = {};
 
     // Structuring our urls with base urls and all their associated tabs
     windows.forEach(window => {
@@ -127,21 +135,10 @@ const getAllTabIds = windows => {
         });
     });
 
-    // After updating our urls, we will have a bunch of single base domains
-    // By design, we will push all of these to a single key
-    for (let base in urls) {
-        if (urls[base].length <= 1 && base !== 'singles') {
-            urls.singles.push(urls[base][0]);
-            delete urls[base];
-        }
-    }
-
     return urls;
 };
 
 // Restructure our data to have tags
-// TODO: This data will need to persist in local storage or the cloud
-
 // This is ASYNCHRONOUS it returns a Promise, so handle it properly =)
 const getTaggedDomains = superO => {
     return new Promise((resolve, reject) => {
@@ -149,16 +146,12 @@ const getTaggedDomains = superO => {
             const tagDomains = {};
 
             for (let domain in superO) {
-                if (domain === 'singles') continue;
                 if (!(domain in tagData)) tagData[domain] = 'untagged';
                 tagDomains[domain] = tagData[domain];
             }
 
-            superO.singles.forEach(tab => {
-                if (!(tab.url in tagData)) tagData[tab.url] = 'untagged';
-                tagDomains[tab.url] = tagData[tab.url];
-            });
-
+            // Update our storage with new urls
+            // TODO: Perhaps only sync if there are any changes
             chrome.storage.sync.set(tagData);
             resolve(tagDomains);
         });

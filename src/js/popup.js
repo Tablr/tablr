@@ -36,7 +36,7 @@ organizeTypeDropdownEl.addEventListener('change', () => {
 
                     for (let domain in taggedDomains) {
                         // // Skip unknown domains      Is this Necesary? [MT]
-                        // if (domain === 'undefined') continue;
+                        if (domain === 'undefined') continue;
                         // Append a list of tagged items
                         //create tagged listitems
                         const taggedDomainListItemEl = document.createElement('li');
@@ -45,10 +45,11 @@ organizeTypeDropdownEl.addEventListener('change', () => {
                         taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
 
                         // Add change textbox event listener 
-                        let tagClickListener = getTagClickListener();
-                        taggedDomainListItemSpanEl.addEventListener('click', tagClickListener);
-                        function getTagClickListener(domain) {
+                        console.log("1 " + domain);
+                        const getTagClickListener = (domain) => {
+                            console.log("in " + domain);
                             return (event) => {
+                                console.log( "event listener: " + domain);
                                 event.stopPropagation();
                                 event.target.removeEventListener('click', tagClickListener);
                                 const inputStyle = `max-width:${event.target.offsetWidth}px; max-height:${event.target.offsetHeight}px; background-color:rgba(0,0,0,0); border:0px; font-size:10; font-color:grey;`;
@@ -62,14 +63,25 @@ organizeTypeDropdownEl.addEventListener('change', () => {
                                     event.stopPropagation();
                                     let keyCode = event.keyCode || event.which;
                                     if (keyCode == '13') {
+                                        let newText = event.target.value;
                                         event.target.parentNode.addEventListener('click', tagClickListener);
-                                        event.target.parentNode.innerHTML = event.target.value;
+                                        event.target.parentNode.innerHTML = newText;
+                                        console.log("enter: " + domain);
                                         // TODO update tag in cloud
+                                        chrome.storage.sync.get(tagData => {
+                                            console.log("storing new cloud tag: " + newText);
+                                            console.log("setting " + domain + " old " + tagData[domain]);
+                                            tagData[domain] = newText;
+                                            console.log("new: " + tagData[domain]);
+                                            chrome.storage.sync.set(tagData);
+                                        }); 
                                     }
 
                                 });
                             };
-                        }
+                        };
+                        let tagClickListener = getTagClickListener(domain);
+                        taggedDomainListItemSpanEl.addEventListener('click', tagClickListener);
                         //tag text eg. news developer, ...
                         taggedDomainListItemSpanElText = document.createTextNode(taggedDomains[domain]);
 

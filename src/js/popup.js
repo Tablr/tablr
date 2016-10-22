@@ -35,15 +35,44 @@ organizeTypeDropdownEl.addEventListener('change', () => {
                     taggedDomainListEl.className = 'list-group';
 
                     for (let domain in taggedDomains) {
-                        // Skip unknown domains
-                        if (domain === 'undefined') continue;
-
+                        // // Skip unknown domains      Is this Necesary? [MT]
+                        // if (domain === 'undefined') continue;
+                        // Append a list of tagged items
+                        //create tagged listitems
                         const taggedDomainListItemEl = document.createElement('li');
                         taggedDomainListItemEl.className = 'list-group-item';
-
                         const taggedDomainListItemSpanEl = document.createElement('span');
                         taggedDomainListItemSpanEl.className = 'tag tag-default tag-pill pull-xs-right';
+
+                        // Add change textbox event listener 
+                        let tagClickListener = getTagClickListener();
+                        taggedDomainListItemSpanEl.addEventListener('click', tagClickListener);
+                        function getTagClickListener(domain) {
+                            return (event) => {
+                                event.stopPropagation();
+                                event.target.removeEventListener('click', tagClickListener);
+                                const inputStyle = `max-width:${event.target.offsetWidth}px; max-height:${event.target.offsetHeight}px; background-color:rgba(0,0,0,0); border:0px; font-size:10; font-color:grey;`;
+                                const taggedDomainListItemTagEditInput = document.createElement('input');
+                                taggedDomainListItemTagEditInput.value = event.target.innerText;
+                                taggedDomainListItemTagEditInput.setAttribute("style", inputStyle);
+                                event.target.innerHTML = "";
+                                event.target.appendChild(taggedDomainListItemTagEditInput);
+                                let spanDivTarget = event.target;
+                                taggedDomainListItemTagEditInput.addEventListener('keypress', (event) => {
+                                    event.stopPropagation();
+                                    let keyCode = event.keyCode || event.which;
+                                    if (keyCode == '13') {
+                                        event.target.parentNode.addEventListener('click', tagClickListener);
+                                        event.target.parentNode.innerHTML = event.target.value;
+                                        // TODO update tag in cloud
+                                    }
+
+                                });
+                            };
+                        }
+                        //tag text eg. news developer, ...
                         taggedDomainListItemSpanElText = document.createTextNode(taggedDomains[domain]);
+
                         taggedDomainListItemSpanEl.appendChild(taggedDomainListItemSpanElText);
                         taggedDomainListItemEl.appendChild(taggedDomainListItemSpanEl);
 

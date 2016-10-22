@@ -1,4 +1,4 @@
-const EXTENSION_ID = 'ijokkjbnhbcajjlnpokiaeinkcaaband';
+const EXTENSION_ID = 'bfbgbpfjacnnhmiblcgpknjegdmihnpj';
 
 module.exports = {
   EXTENSION_ID
